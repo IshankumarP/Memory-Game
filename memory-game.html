@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Greek Memory Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .game-container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 700px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .score-board {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border-radius: 15px;
+            color: white;
+        }
+
+        .score-item {
+            text-align: center;
+        }
+
+        .score-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+
+        .score-value {
+            font-size: 2em;
+            font-weight: bold;
+        }
+
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            aspect-ratio: 1;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            transform-style: preserve-3d;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .card:hover {
+            transform: scale(1.05);
+        }
+
+        .card.flipped {
+            background: white;
+            border: 3px solid #667eea;
+        }
+
+        .card.matched {
+            background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+            cursor: default;
+            animation: matchAnimation 0.6s ease;
+        }
+
+        @keyframes matchAnimation {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1) rotate(5deg); }
+        }
+
+        .card-front {
+            font-size: 3em;
+            color: white;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .card.flipped .card-front,
+        .card.matched .card-front {
+            opacity: 1;
+            color: #667eea;
+        }
+
+        .card-back {
+            position: absolute;
+            font-size: 2em;
+            color: white;
+            opacity: 1;
+            transition: opacity 0.3s ease;
+        }
+
+        .card.flipped .card-back,
+        .card.matched .card-back {
+            opacity: 0;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .game-over {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .game-over.show {
+            display: flex;
+        }
+
+        .game-over-content {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 400px;
+        }
+
+        .game-over-content h2 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+
+        .game-over-content p {
+            font-size: 1.3em;
+            margin-bottom: 30px;
+            color: #666;
+        }
+
+        @media (max-width: 600px) {
+            .game-board {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 10px;
+            }
+
+            .header h1 {
+                font-size: 2em;
+            }
+
+            .card-front {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="header">
+            <h1>🎮 Greek Memory Game</h1>
+            <p>Match the Greek alphabet pairs!</p>
+        </div>
+
+        <div class="score-board">
+            <div class="score-item">
+                <div class="score-label">Score</div>
+                <div class="score-value" id="score">100</div>
+            </div>
+            <div class="score-item">
+                <div class="score-label">Moves</div>
+                <div class="score-value" id="moves">0</div>
+            </div>
+            <div class="score-item">
+                <div class="score-label">Matches</div>
+                <div class="score-value" id="matches">0</div>
+            </div>
+        </div>
+
+        <div class="game-board" id="gameBoard"></div>
+
+        <div class="controls">
+            <button class="btn btn-primary" onclick="resetGame()">New Game</button>
+        </div>
+    </div>
+
+    <div class="game-over" id="gameOver">
+        <div class="game-over-content">
+            <h2 id="gameOverTitle">Game Over!</h2>
+            <p id="gameOverMessage"></p>
+            <button class="btn btn-primary" onclick="resetGame()">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        // Greek alphabet symbols for the cards
+        const greekAlphabets = ['Α', 'Β', 'Γ', 'Δ', 'Ε', 'Ζ', 'Η', 'Θ'];
+        
+        let cards = [];
+        let flippedCards = [];
+        let matchedPairs = 0;
+        let score = 100;
+        let moves = 0;
+        let canFlip = true;
+
+        // Initialize the game
+        function initGame() {
+            // Create pairs of cards
+            cards = [...greekAlphabets, ...greekAlphabets]
+                .sort(() => Math.random() - 0.5)
+                .map((symbol, index) => ({
+                    id: index,
+                    symbol: symbol,
+                    isFlipped: false,
+                    isMatched: false
+                }));
+
+            // Reset game state
+            flippedCards = [];
+            matchedPairs = 0;
+            score = 100;
+            moves = 0;
+            canFlip = true;
+
+            // Update UI
+            updateScore();
+            renderBoard();
+        }
+
+        // Render the game board
+        function renderBoard() {
+            const gameBoard = document.getElementById('gameBoard');
+            gameBoard.innerHTML = '';
+
+            cards.forEach(card => {
+                const cardElement = document.createElement('div');
+                cardElement.className = 'card';
+                cardElement.dataset.id = card.id;
+
+                if (card.isFlipped) cardElement.classList.add('flipped');
+                if (card.isMatched) cardElement.classList.add('matched');
+
+                cardElement.innerHTML = `
+                    <div class="card-back">?</div>
+                    <div class="card-front">${card.symbol}</div>
+                `;
+
+                cardElement.addEventListener('click', () => flipCard(card.id));
+                gameBoard.appendChild(cardElement);
+            });
+        }
+
+        // Flip a card
+        function flipCard(cardId) {
+            if (!canFlip) return;
+
+            const card = cards.find(c => c.id === cardId);
+            
+            // Prevent flipping if card is already flipped or matched
+            if (card.isFlipped || card.isMatched) return;
+
+            // Prevent flipping more than 2 cards
+            if (flippedCards.length >= 2) return;
+
+            // Flip the card
+            card.isFlipped = true;
+            flippedCards.push(card);
+            renderBoard();
+
+            // Check for match when 2 cards are flipped
+            if (flippedCards.length === 2) {
+                canFlip = false;
+                moves++;
+                updateScore();
+                
+                setTimeout(() => {
+                    checkMatch();
+                }, 800);
+            }
+        }
+
+        // Check if flipped cards match
+        function checkMatch() {
+            const [card1, card2] = flippedCards;
+
+            if (card1.symbol === card2.symbol) {
+                // Cards match!
+                card1.isMatched = true;
+                card2.isMatched = true;
+                matchedPairs++;
+                
+                // Check if game is won
+                if (matchedPairs === greekAlphabets.length) {
+                    endGame(true);
+                }
+            } else {
+                // Cards don't match - deduct points
+                score -= 4;
+                card1.isFlipped = false;
+                card2.isFlipped = false;
+
+                // Check if game is lost (score reaches 0)
+                if (score <= 0) {
+                    score = 0;
+                    endGame(false);
+                }
+            }
+
+            flippedCards = [];
+            canFlip = true;
+            updateScore();
+            renderBoard();
+        }
+
+        // Update score display
+        function updateScore() {
+            document.getElementById('score').textContent = score;
+            document.getElementById('moves').textContent = moves;
+            document.getElementById('matches').textContent = matchedPairs;
+        }
+
+        // End the game
+        function endGame(won) {
+            const gameOver = document.getElementById('gameOver');
+            const title = document.getElementById('gameOverTitle');
+            const message = document.getElementById('gameOverMessage');
+
+            if (won) {
+                title.textContent = '🎉 Congratulations!';
+                message.textContent = `You won with ${score} points in ${moves} moves!`;
+            } else {
+                title.textContent = '😞 Game Over!';
+                message.textContent = `Your score reached 0. Better luck next time!`;
+            }
+
+            gameOver.classList.add('show');
+        }
+
+        // Reset the game
+        function resetGame() {
+            document.getElementById('gameOver').classList.remove('show');
+            initGame();
+        }
+
+        // Start the game when page loads
+        initGame();
+    </script>
+</body>
+</html>
